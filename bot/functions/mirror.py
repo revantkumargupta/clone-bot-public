@@ -86,7 +86,7 @@ class MirrorListener:
         isZip=False,
         extract=False,
         isQbit=False,
-        isLeech=False,
+        is=False,
         pswd=None,
         tag=None,
     ):
@@ -96,7 +96,7 @@ class MirrorListener:
         self.extract = extract
         self.isZip = isZip
         self.isQbit = isQbit
-        self.isLeech = isLeech
+        self.is = is
         self.pswd = pswd
         self.tag = tag
         self.isPrivate = self.message.chat.type in ["private", "group"]
@@ -139,7 +139,7 @@ class MirrorListener:
                 path = m_path + ".zip"
                 LOGGER.info(f"Zip: orig_path: {m_path}, zip_path: {path}")
                 if self.pswd is not None:
-                    if self.isLeech and int(size) > TG_SPLIT_SIZE:
+                    if self.is and int(size) > TG_SPLIT_SIZE:
                         srun(
                             [
                                 "7z",
@@ -153,7 +153,7 @@ class MirrorListener:
                         )
                     else:
                         srun(["7z", "a", "-mx=0", f"-p{self.pswd}", path, m_path])
-                elif self.isLeech and int(size) > TG_SPLIT_SIZE:
+                elif self.is and int(size) > TG_SPLIT_SIZE:
                     srun(["7z", f"-v{TG_SPLIT_SIZE}b", "a", "-mx=0", path, m_path])
                 else:
                     srun(["7z", "a", "-mx=0", path, m_path])
@@ -161,7 +161,7 @@ class MirrorListener:
                 LOGGER.info("File to archive not found!")
                 self.onUploadError("Internal error occurred!!")
                 return
-            if not self.isQbit or self.isLeech:
+            if not self.isQbit or self.is:
                 try:
                     rmtree(m_path)
                 except:
@@ -229,7 +229,7 @@ class MirrorListener:
             path = f"{DOWNLOAD_DIR}{self.uid}/{name}"
         up_name = PurePath(path).name
         up_path = f"{DOWNLOAD_DIR}{self.uid}/{up_name}"
-        if self.isLeech and not self.isZip:
+        if self.is and not self.isZip:
             checked = False
             for dirpath, subdir, files in walk(
                 f"{DOWNLOAD_DIR}{self.uid}", topdown=False
@@ -247,9 +247,9 @@ class MirrorListener:
                             LOGGER.info(f"Splitting: {up_name}")
                         fs_split(f_path, f_size, file_, dirpath, TG_SPLIT_SIZE)
                         osremove(f_path)
-        if self.isLeech:
+        if self.is:
             size = get_path_size(f"{DOWNLOAD_DIR}{self.uid}")
-            LOGGER.info(f"Leech Name: {up_name}")
+            LOGGER.info(f" Name: {up_name}")
             tg = TgUploader(up_name, self)
             tg_upload_status = TgUploadStatus(tg, size, gid, self)
             with download_dict_lock:
@@ -289,7 +289,7 @@ class MirrorListener:
         if not self.isPrivate and INCOMPLETE_TASK_NOTIFIER and DB_URI is not None:
             DbManger().rm_complete_task(self.message.link)
         msg = f"<b>Name: </b><code>{escape(name)}</code>\n\n<b>Size: </b>{size}"
-        if self.isLeech:
+        if self.is:
             msg += f"\n<b>Total Files: </b>{folders}"
             if typ != 0:
                 msg += f"\n<b>Corrupted Files: </b>{typ}"
@@ -376,7 +376,7 @@ def _mirror(
     isZip=False,
     extract=False,
     isQbit=False,
-    isLeech=False,
+    is=False,
     pswd=None,
     multi=0,
 ):
@@ -445,7 +445,7 @@ def _mirror(
                     link = reply_text.strip()
             elif file.mime_type != "application/x-bittorrent" and not isQbit:
                 listener = MirrorListener(
-                    bot, message, isZip, extract, isQbit, isLeech, pswd, tag
+                    bot, message, isZip, extract, isQbit, is, pswd, tag
                 )
                 tg_downloader = TelegramDownloadHelper(listener)
                 tg_downloader.add_download(
@@ -473,7 +473,7 @@ def _mirror(
                             isZip,
                             extract,
                             isQbit,
-                            isLeech,
+                            is,
                             pswd,
                             multi,
                         ),
@@ -521,10 +521,10 @@ def _mirror(
                     return sendMessage(str(e), bot, message)
         
 
-    listener = MirrorListener(bot, message, isZip, extract, isQbit, isLeech, pswd, tag)
+    listener = MirrorListener(bot, message, isZip, extract, isQbit, is, pswd, tag)
 
     if is_gdrive_link(link):
-        if not isZip and not extract and not isLeech:
+        if not isZip and not extract and not is:
             gmsg = (
                 f"Use /{BotCommands.CloneCommand} to clone Google Drive file/folder\n\n"
             )
@@ -554,7 +554,7 @@ def _mirror(
         sleep(3)
         Thread(
             target=_mirror,
-            args=(bot, nextmsg, isZip, extract, isQbit, isLeech, pswd, multi),
+            args=(bot, nextmsg, isZip, extract, isQbit, is, pswd, multi),
         ).start()
 
 
