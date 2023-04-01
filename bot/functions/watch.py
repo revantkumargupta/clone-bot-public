@@ -18,7 +18,7 @@ from .mirror import MirrorListener
 listener_dict = {}
 
 
-def _watch(bot, message, isZip=False, isLeech=False, multi=0):
+def _watch(bot, message, isZip=False, is=False, multi=0):
     mssg = message.text
     user_id = message.from_user.id
     msg_id = message.message_id
@@ -78,10 +78,10 @@ def _watch(bot, message, isZip=False, isLeech=False, multi=0):
         help_msg += "\n\n<b>NOTE:</b> Add `^` before integer, some values must be integer and some string."
         help_msg += " Like playlist_items:10 works with string so no need to add `^` before the number"
         help_msg += " but playlistend works only with integer so you must add `^` before the number like example above."
-        help_msg += "\n\nCheck all arguments from this <a href='https://github.com/yt-dlp/yt-dlp/blob/a3125791c7a5cdf2c8c025b99788bf686edd1a8a/yt_dlp/YoutubeDL.py#L194'>FILE</a>."
+        help_msg += "\n\nCheck all arguments from this <a href='https://github.com/p/p/blob/a3125791c7a5cdf2c8c025b99788bf686edd1a8a/_dlp/YoutubeDL.py#L194'>FILE</a>."
         return sendMessage(help_msg, bot, message)
 
-    listener = MirrorListener(bot, message, isZip, isLeech=isLeech, pswd=pswd, tag=tag)
+    listener = MirrorListener(bot, message, isZip, is=is, pswd=pswd, tag=tag)
     buttons = make_buttons.ButtonMaker()
     best_video = "bv*+ba/b"
     best_audio = "ba/b"
@@ -101,9 +101,9 @@ def _watch(bot, message, isZip=False, isLeech=False, multi=0):
         buttons.sbutton("Best Videos", f"qu {msg_id} {best_video} t")
         buttons.sbutton("Best Audios", f"qu {msg_id} {best_audio} t")
         buttons.sbutton("Cancel", f"qu {msg_id} cancel")
-        YTBUTTONS = InlineKeyboardMarkup(buttons.build_menu(3))
-        listener_dict[msg_id] = [listener, user_id, link, name, YTBUTTONS, args]
-        bmsg = sendMarkup("Choose Playlist Videos Quality:", bot, message, YTBUTTONS)
+        BUTTONS = InlineKeyboardMarkup(buttons.build_menu(3))
+        listener_dict[msg_id] = [listener, user_id, link, name, BUTTONS, args]
+        bmsg = sendMarkup("Choose Playlist Videos Quality:", bot, message, BUTTONS)
     else:
         formats = result.get("formats")
         formats_dict = {}
@@ -150,17 +150,17 @@ def _watch(bot, message, isZip=False, isLeech=False, multi=0):
         buttons.sbutton("Best Video", f"qu {msg_id} {best_video}")
         buttons.sbutton("Best Audio", f"qu {msg_id} {best_audio}")
         buttons.sbutton("Cancel", f"qu {msg_id} cancel")
-        YTBUTTONS = InlineKeyboardMarkup(buttons.build_menu(2))
+        BUTTONS = InlineKeyboardMarkup(buttons.build_menu(2))
         listener_dict[msg_id] = [
             listener,
             user_id,
             link,
             name,
-            YTBUTTONS,
+            BUTTONS,
             args,
             formats_dict,
         ]
-        bmsg = sendMarkup("Choose Video Quality:", bot, message, YTBUTTONS)
+        bmsg = sendMarkup("Choose Video Quality:", bot, message, BUTTONS)
 
     Thread(target=_auto_cancel, args=(bmsg, msg_id)).start()
     if multi > 1:
@@ -177,7 +177,7 @@ def _watch(bot, message, isZip=False, isLeech=False, multi=0):
         nextmsg.from_user.id = message.from_user.id
         multi -= 1
         sleep(3)
-        Thread(target=_watch, args=(bot, nextmsg, isZip, isLeech, multi)).start()
+        Thread(target=_watch, args=(bot, nextmsg, isZip, is, multi)).start()
 
 
 def _qual_subbuttons(task_id, qual, msg):
@@ -268,7 +268,7 @@ def select_format(update, context):
         qual = data[2]
         if qual.startswith(
             "bv*["
-        ):  # To not exceed telegram button bytes limits. Temp solution.
+        ):  # To not exceed telegram button bes limits. Temp solution.
             height = re_split(r"\[|\]", qual, maxsplit=2)[1]
             qual = qual + f"+ba/b[{height}]"
         if len(data) == 4:
@@ -301,11 +301,11 @@ def watchZip(update, context):
     _watch(context.bot, update.message, True)
 
 
-def leechWatch(update, context):
-    _watch(context.bot, update.message, isLeech=True)
+def Watch(update, context):
+    _watch(context.bot, update.message, is=True)
 
 
-def leechWatchZip(update, context):
+def WatchZip(update, context):
     _watch(context.bot, update.message, True, True)
 
 
@@ -321,15 +321,15 @@ zip_watch_handler = CommandHandler(
     filters=CustomFilters.authorized_chat | CustomFilters.authorized_user,
     run_async=True,
 )
-leech_watch_handler = CommandHandler(
-    BotCommands.LeechWatchCommand,
-    leechWatch,
+_watch_handler = CommandHandler(
+    BotCommands.WatchCommand,
+    Watch,
     filters=CustomFilters.authorized_chat | CustomFilters.authorized_user,
     run_async=True,
 )
-leech_zip_watch_handler = CommandHandler(
-    BotCommands.LeechZipWatchCommand,
-    leechWatchZip,
+_zip_watch_handler = CommandHandler(
+    BotCommands.ZipWatchCommand,
+    WatchZip,
     filters=CustomFilters.authorized_chat | CustomFilters.authorized_user,
     run_async=True,
 )
@@ -337,6 +337,6 @@ quality_handler = CallbackQueryHandler(select_format, pattern="qu", run_async=Tr
 
 dispatcher.add_handler(watch_handler)
 dispatcher.add_handler(zip_watch_handler)
-dispatcher.add_handler(leech_watch_handler)
-dispatcher.add_handler(leech_zip_watch_handler)
+dispatcher.add_handler(_watch_handler)
+dispatcher.add_handler(_zip_watch_handler)
 dispatcher.add_handler(quality_handler)
