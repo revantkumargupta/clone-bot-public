@@ -86,7 +86,7 @@ class MirrorListener:
         isZip=False,
         extract=False,
         isQbit=False,
-        is=False,
+        isLeech=False,
         pswd=None,
         tag=None,
     ):
