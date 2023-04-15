@@ -139,7 +139,7 @@ class MirrorListener:
                 path = m_path + ".zip"
                 LOGGER.info(f"Zip: orig_path: {m_path}, zip_path: {path}")
                 if self.pswd is not None:
-                    if self.is and int(size) > TG_SPLIT_SIZE:
+                    if self.isLeech and int(size) > TG_SPLIT_SIZE:
                         srun(
                             [
                                 "7z",
