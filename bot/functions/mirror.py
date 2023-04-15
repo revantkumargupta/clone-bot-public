@@ -96,7 +96,7 @@ class MirrorListener:
         self.extract = extract
         self.isZip = isZip
         self.isQbit = isQbit
-        self.is = is
+        self.isLeech = isLeech
         self.pswd = pswd
         self.tag = tag
         self.isPrivate = self.message.chat.type in ["private", "group"]
